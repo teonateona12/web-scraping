@@ -8,6 +8,7 @@ interface Person {
   zip: number;
   email: string;
   city: string;
+  gender: string;
 }
 function App() {
   const [persons, setPersons] = useState<Person[]>([]);
@@ -23,6 +24,32 @@ function App() {
       }
     };
     getPersons();
+  }, []);
+  console.log(persons.length);
+
+  useEffect(() => {
+    const updateGender = async () => {
+      const updatedPersons = await Promise.all(
+        persons.map(async (item) => {
+          try {
+            const response = await axios.get(
+              `https://api.genderize.io/?name=${item.firstName}`
+            );
+            const gender = response.data.gender;
+            return { ...item, gender };
+          } catch (error) {
+            console.log(error);
+            return item;
+          }
+        })
+      );
+
+      setPersons(updatedPersons);
+    };
+    console.log(persons);
+    if (persons.length > 0) {
+      updateGender();
+    }
   }, []);
 
   const exportToExcel = () => {
@@ -52,9 +79,13 @@ function App() {
     a.download = "persons.csv";
     a.click();
   };
+
+  let url = `https://api.genderize.io?name=ana`;
+
   return (
     <div>
       <h1>List</h1>
+      <p>{persons[0].gender}</p>
       <div className="button-container">
         <button onClick={exportToExcel}>Export to Excel</button>
         <button onClick={exportToCSV}>Export to CSV</button>
