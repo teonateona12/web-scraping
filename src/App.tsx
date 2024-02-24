@@ -80,8 +80,6 @@ function App() {
     a.click();
   };
 
-  let url = `https://api.genderize.io?name=ana`;
-
   return (
     <div>
       <h1>List</h1>
