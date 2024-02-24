@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import viteLogo from "/vite.svg";
 import axios from "axios";
+import * as XLSX from "xlsx";
+
 interface Person {
   firstName: string;
   lastName: string;
@@ -23,9 +24,41 @@ function App() {
     };
     getPersons();
   }, []);
+
+  const exportToExcel = () => {
+    const worksheet = XLSX.utils.json_to_sheet(persons);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Persons");
+    XLSX.writeFile(workbook, "persons.xlsx");
+  };
+
+  const exportToCSV = () => {
+    const csvData = [
+      ["First Name", "Last Name", "Zip Code", "Email", "City"],
+      ...persons.map((person) => [
+        person.firstName,
+        person.lastName,
+        person.zip,
+        person.email,
+        person.city,
+      ]),
+    ];
+
+    const csvContent = csvData.map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "persons.csv";
+    a.click();
+  };
   return (
     <div>
       <h1>List</h1>
+      <div className="button-container">
+        <button onClick={exportToExcel}>Export to Excel</button>
+        <button onClick={exportToCSV}>Export to CSV</button>
+      </div>
       <table>
         <thead>
           <tr>
