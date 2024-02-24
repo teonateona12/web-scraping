@@ -12,44 +12,36 @@ interface Person {
 }
 function App() {
   const [persons, setPersons] = useState<Person[]>([]);
+
   useEffect(() => {
-    const getPersons = async () => {
+    const fetchData = async () => {
       try {
         const response = await axios.get(
           "https://web-scraping-api-4zao.onrender.com/api/person"
         );
-        setPersons(response.data);
+        const personsData = response.data;
+        const updatedPersons = await Promise.all(
+          personsData.map(async (item: any) => {
+            try {
+              const genderResponse = await axios.get(
+                `https://api.genderize.io/?name=${item.firstName}`
+              );
+              const gender = genderResponse.data.gender === "male" ? "m" : "f";
+              return { ...item, gender };
+            } catch (error) {
+              console.log("Error fetching gender:", error);
+              const gender = "Request limit reached";
+              return { ...item, gender };
+            }
+          })
+        );
+        setPersons(updatedPersons);
       } catch (error) {
-        console.log(error);
+        console.log("Error fetching data:", error);
       }
     };
-    getPersons();
-  }, []);
-  console.log(persons.length);
 
-  useEffect(() => {
-    const updateGender = async () => {
-      const updatedPersons = await Promise.all(
-        persons.map(async (item) => {
-          try {
-            const response = await axios.get(
-              `https://api.genderize.io/?name=${item.firstName}`
-            );
-            const gender = response.data.gender;
-            return { ...item, gender };
-          } catch (error) {
-            console.log(error);
-            return item;
-          }
-        })
-      );
-
-      setPersons(updatedPersons);
-    };
-    console.log(persons);
-    if (persons.length > 0) {
-      updateGender();
-    }
+    fetchData();
   }, []);
 
   const exportToExcel = () => {
@@ -81,9 +73,8 @@ function App() {
   };
 
   return (
-    <div>
+    <div style={{ margin: "0 30px" }}>
       <h1>List</h1>
-      <p>{persons[0].gender}</p>
       <div className="button-container">
         <button onClick={exportToExcel}>Export to Excel</button>
         <button onClick={exportToCSV}>Export to CSV</button>
@@ -96,16 +87,18 @@ function App() {
             <th>Zip Code</th>
             <th>Email</th>
             <th>City</th>
+            <th>Gender</th>
           </tr>
         </thead>
         <tbody>
           {persons.map((person, index) => (
-            <tr key={index} style={{ margin: "60px" }}>
+            <tr key={index}>
               <td>{person.firstName}</td>
               <td>{person.lastName}</td>
               <td>{person.zip}</td>
               <td>{person.email}</td>
               <td>{person.city}</td>
+              <td>{person.gender || null}</td>
             </tr>
           ))}
         </tbody>
